@@ -20,6 +20,7 @@ class GitService:
         local_path: str,
         ssh_key_path: str,
         target_branch: str = "test",
+        known_hosts_path: str | None = None,
     ):
         self.repo_url = repo_url
         self.local_path = Path(local_path)
@@ -27,8 +28,16 @@ class GitService:
         self.target_branch = target_branch
         self._repo: Repo | None = None
 
-        # 设置SSH命令环境变量
-        self._git_ssh_cmd = f'ssh -i {ssh_key_path} -o StrictHostKeyChecking=no'
+        # 构建SSH命令，使用指定的known_hosts文件进行主机密钥验证
+        if known_hosts_path:
+            self._git_ssh_cmd = (
+                f'ssh -i {ssh_key_path} '
+                f'-o UserKnownHostsFile={known_hosts_path} '
+                f'-o StrictHostKeyChecking=yes'
+            )
+        else:
+            # 回退：使用系统默认的known_hosts
+            self._git_ssh_cmd = f'ssh -i {ssh_key_path}'
 
     @property
     def lock_file(self) -> Path:
@@ -51,7 +60,14 @@ class GitService:
 
     def ensure_repo_exists(self) -> None:
         """确保仓库存在，不存在则clone"""
-        if not self.local_path.exists():
+        git_dir = self.local_path / ".git"
+        if not git_dir.exists():
+            if self.local_path.exists():
+                # 目录存在但不是 git 仓库，拒绝操作而非删除
+                raise GitServiceError(
+                    f"目录 {self.local_path} 已存在但不是 Git 仓库，"
+                    "请手动检查或删除后重试"
+                )
             self.local_path.parent.mkdir(parents=True, exist_ok=True)
             env = {"GIT_SSH_COMMAND": self._git_ssh_cmd}
             Repo.clone_from(

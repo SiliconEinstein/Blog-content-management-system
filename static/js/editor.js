@@ -52,19 +52,31 @@ function parseTocFromContent() {
     const items = [];
 
     lines.forEach(line => {
-        // 匹配二级标题 ## Title
+        // 匹配二级标题 ## Title 或 ## Title{#custom-anchor}
         const match = line.match(/^##\s+(.+)$/);
         if (match) {
-            const title = match[1].trim();
-            const link = '#' + title
-                .toLowerCase()
-                .replace(/[^\w\s\-]/g, '')  // 去除特殊字符
-                .replace(/\s+/g, '-')        // 空格转连字符
-                .replace(/-+/g, '-')         // 多个连字符合并
-                .replace(/^-|-$/g, '');      // 去除首尾连字符
+            let titlePart = match[1].trim();
+            let link;
+
+            // 检查是否有自定义锚点 {#anchor-name}
+            const anchorMatch = titlePart.match(/\{#([^}]+)\}\s*$/);
+            if (anchorMatch) {
+                // 使用自定义锚点
+                link = '#' + anchorMatch[1];
+                // 从标题中移除锚点部分
+                titlePart = titlePart.replace(/\{#[^}]+\}\s*$/, '').trim();
+            } else {
+                // 从标题生成锚点
+                link = '#' + titlePart
+                    .toLowerCase()
+                    .replace(/[^\w\s\-]/g, '')  // 去除特殊字符
+                    .replace(/\s+/g, '-')        // 空格转连字符
+                    .replace(/-+/g, '-')         // 多个连字符合并
+                    .replace(/^-|-$/g, '');      // 去除首尾连字符
+            }
 
             items.push({
-                title: title,
+                title: titlePart,
                 link: link,
                 enabled: true
             });

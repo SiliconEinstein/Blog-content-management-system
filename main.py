@@ -1,14 +1,16 @@
 """博客发布系统主应用"""
 from datetime import date
-from pathlib import Path
+from functools import lru_cache
 from typing import Annotated
+import json
 
-from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, HTTPException, Depends
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, field_validator
 
-import config
+from config import Settings, get_settings
 from models import BlogPost, TocItem
 from services import GitService, GitServiceError, GitLabService, GitLabServiceError
 
@@ -18,38 +20,103 @@ app = FastAPI(title="博客发布系统")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# 服务实例
-git_service = GitService(
-    repo_url=config.REPO_URL,
-    local_path=config.REPO_LOCAL_PATH,
-    ssh_key_path=config.SSH_KEY_PATH,
-    target_branch=config.TARGET_BRANCH,
-)
 
-gitlab_service = GitLabService(
-    url=config.GITLAB_URL,
-    token=config.GITLAB_TOKEN,
-    project_id=config.GITLAB_PROJECT_ID,
-)
+class PublishRequest(BaseModel):
+    """发布博客请求模型"""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    page_h1_title: str = Field(min_length=1, max_length=200)
+    meta_title: str = Field(min_length=1, max_length=200)
+    url_slug: str = Field(min_length=1, max_length=120, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    meta_description: str = Field(min_length=1, max_length=300)
+    summary: str = Field(min_length=1, max_length=500)
+    image: HttpUrl
+    post_date: date
+    editor_name: str = Field(min_length=1, max_length=100)
+    content_type: str = Field(min_length=1, max_length=50)
+    content_category: str = Field(min_length=1, max_length=50)
+    tags: list[str]
+    category_folder: str = Field(min_length=1, max_length=100)
+    content: str = Field(min_length=1)
+    custom_toc: list[TocItem]
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, value: list[str]) -> list[str]:
+        cleaned_tags = [tag.strip() for tag in value if tag.strip()]
+        if not cleaned_tags:
+            raise ValueError("至少需要一个标签")
+        return cleaned_tags
+
+    @field_validator("category_folder")
+    @classmethod
+    def validate_category_folder(cls, value: str) -> str:
+        if "/" in value or ".." in value:
+            raise ValueError("分类目录不合法")
+        return value
+
+
+def parse_toc_items(toc_json: str) -> list[TocItem]:
+    """解析目录 JSON"""
+    if not toc_json:
+        return []
+
+    try:
+        toc_data = json.loads(toc_json)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"TOC JSON 格式错误: {exc}") from exc
+
+    if not isinstance(toc_data, list):
+        raise HTTPException(status_code=400, detail="TOC 必须是数组")
+
+    try:
+        return [TocItem(**item) for item in toc_data]
+    except (TypeError, ValidationError) as exc:
+        raise HTTPException(status_code=400, detail=f"TOC 数据验证失败: {exc}") from exc
+
+
+@lru_cache
+def get_git_service() -> GitService:
+    """获取 Git 服务单例"""
+    settings = get_settings()
+    return GitService(
+        repo_url=settings.repo_url,
+        local_path=settings.repo_local_path,
+        ssh_key_path=settings.ssh_key_path,
+        target_branch=settings.target_branch,
+        known_hosts_path=settings.ssh_known_hosts_path,
+    )
+
+
+@lru_cache
+def get_gitlab_service() -> GitLabService:
+    """获取 GitLab 服务单例"""
+    settings = get_settings()
+    return GitLabService(
+        url=settings.gitlab_url,
+        token=settings.gitlab_token,
+        project_id=settings.gitlab_project_id,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request, settings: Settings = Depends(get_settings)):
     """编辑器页面"""
     return templates.TemplateResponse(
         request,
         "editor.html",
         {
-            "categories": config.CATEGORY_FOLDERS,
+            "categories": settings.category_folders,
             "today": date.today().isoformat(),
         },
     )
 
 
 @app.get("/api/categories")
-async def get_categories():
+async def get_categories(settings: Settings = Depends(get_settings)):
     """获取类别列表"""
-    return {"categories": config.CATEGORY_FOLDERS}
+    return {"categories": settings.category_folders}
 
 
 @app.post("/api/publish")
@@ -68,40 +135,52 @@ async def publish_blog(
     category_folder: Annotated[str, Form()],
     content: Annotated[str, Form()],
     toc_json: Annotated[str, Form()],
+    settings: Settings = Depends(get_settings),
+    git_service: GitService = Depends(get_git_service),
+    gitlab_service: GitLabService = Depends(get_gitlab_service),
 ):
     """发布博客"""
-    import json
+    custom_toc = parse_toc_items(toc_json)
 
-    # 解析tags
-    tags_list = [t.strip() for t in tags.split(",") if t.strip()]
-
-    # 解析TOC
     try:
-        toc_data = json.loads(toc_json) if toc_json else []
-        custom_toc = [TocItem(**item) for item in toc_data]
-    except (json.JSONDecodeError, TypeError):
-        custom_toc = []
-
-    # 创建BlogPost
-    try:
-        post = BlogPost(
+        publish_request = PublishRequest(
             page_h1_title=page_h1_title,
             meta_title=meta_title,
             url_slug=url_slug,
             meta_description=meta_description,
             summary=summary,
             image=image,
-            date=date.fromisoformat(post_date),
+            post_date=post_date,
             editor_name=editor_name,
             content_type=content_type,
             content_category=content_category,
-            tags=tags_list,
-            custom_toc=custom_toc,
+            tags=tags.split(","),
             category_folder=category_folder,
             content=content,
+            custom_toc=custom_toc,
         )
-    except Exception as e:
+    except (ValueError, ValidationError) as e:
         raise HTTPException(status_code=400, detail=f"数据验证失败: {e}")
+
+    if publish_request.category_folder not in settings.category_folders:
+        raise HTTPException(status_code=400, detail="分类目录不存在")
+
+    post = BlogPost(
+        page_h1_title=publish_request.page_h1_title,
+        meta_title=publish_request.meta_title,
+        url_slug=publish_request.url_slug,
+        meta_description=publish_request.meta_description,
+        summary=publish_request.summary,
+        image=str(publish_request.image),
+        date=publish_request.post_date,
+        editor_name=publish_request.editor_name,
+        content_type=publish_request.content_type,
+        content_category=publish_request.content_category,
+        tags=publish_request.tags,
+        custom_toc=publish_request.custom_toc,
+        category_folder=publish_request.category_folder,
+        content=publish_request.content,
+    )
 
     # 生成Markdown内容
     markdown_content = post.to_markdown()
@@ -120,12 +199,12 @@ async def publish_blog(
 
     # 创建MR
     mr_url = None
-    manual_mr_url = gitlab_service.get_manual_mr_url(branch_name, config.TARGET_BRANCH)
+    manual_mr_url = gitlab_service.get_manual_mr_url(branch_name, settings.target_branch)
 
     try:
         mr_url = gitlab_service.create_merge_request(
             source_branch=branch_name,
-            target_branch=config.TARGET_BRANCH,
+            target_branch=settings.target_branch,
             title=f"Add blog: {page_h1_title}",
         )
     except GitLabServiceError:
@@ -162,4 +241,5 @@ async def success_page(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host=config.HOST, port=config.PORT)
+    settings = get_settings()
+    uvicorn.run(app, host=settings.host, port=settings.port)

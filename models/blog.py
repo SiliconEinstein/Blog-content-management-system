@@ -9,11 +9,21 @@ class _QuotedStr(str):
     pass
 
 
+class _FlowList(list):
+    """用于强制YAML输出行内数组格式 ["a", "b"]"""
+    pass
+
+
 def _quoted_str_representer(dumper: yaml.Dumper, data: _QuotedStr) -> yaml.ScalarNode:
     return dumper.represent_scalar("tag:yaml.org,2002:str", str(data), style='"')
 
 
+def _flow_list_representer(dumper: yaml.Dumper, data: _FlowList) -> yaml.SequenceNode:
+    return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+
+
 yaml.add_representer(_QuotedStr, _quoted_str_representer)
+yaml.add_representer(_FlowList, _flow_list_representer)
 
 
 def _quote_strings(obj: object) -> object:
@@ -76,12 +86,20 @@ class BlogPost(BaseModel):
             "editor_name": self.editor_name,
             "content_type": self.content_type,
             "content_category": self.content_category,
-            "tags": self.tags,
+            "tags": _FlowList([_QuotedStr(tag) for tag in self.tags]),
             "custom_toc": [item.model_dump() for item in self.custom_toc],
         }
 
+        # 对除了 tags 之外的字符串字段应用引号
+        quoted_frontmatter = {}
+        for k, v in frontmatter.items():
+            if k == "tags":
+                quoted_frontmatter[k] = v  # 已处理
+            else:
+                quoted_frontmatter[k] = _quote_strings(v)
+
         yaml_str = yaml.dump(
-            _quote_strings(frontmatter),
+            quoted_frontmatter,
             default_flow_style=False,
             allow_unicode=True,
             sort_keys=False,

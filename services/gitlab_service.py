@@ -61,10 +61,11 @@ class GitLabService:
         """
         encoded_source = quote(source_branch, safe="")
         encoded_target = quote(target_branch, safe="")
-        project_path = self.project_id.replace("/", "%2F") if "/" in str(self.project_id) else self.project_id
+        # project_id 可能是数字或 "group/project" 格式，需要 URL 编码
+        project_path = quote(str(self.project_id), safe="")
 
         return (
-            f"{self.url}/{self.project_id}/-/merge_requests/new"
+            f"{self.url.rstrip('/')}/{project_path}/-/merge_requests/new"
             f"?merge_request[source_branch]={encoded_source}"
             f"&merge_request[target_branch]={encoded_target}"
         )

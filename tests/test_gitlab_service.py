@@ -60,5 +60,6 @@ def test_get_manual_mr_url():
 
     url = service.get_manual_mr_url("blog/test-123", "test")
 
-    assert "gitlab.example.com" in url
-    assert "blog/test-123" in url or "blog%2Ftest-123" in url
+    assert url.startswith("https://gitlab.example.com/group%2Fproject/-/merge_requests/new")
+    assert "merge_request[source_branch]=blog%2Ftest-123" in url
+    assert "merge_request[target_branch]=test" in url

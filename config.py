@@ -1,26 +1,44 @@
-"""应用配置"""
+"""应用配置 - 从环境变量读取"""
+from functools import lru_cache
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# GitLab配置
-GITLAB_URL = "https://gitlab.example.com"
-GITLAB_PROJECT_ID = "123"  # 或 "group/project"
-GITLAB_TOKEN = "glpat-xxxx"  # 用于创建MR的API Token
 
-# Git配置
-REPO_URL = "git@gitlab.example.com:group/project.git"
-REPO_LOCAL_PATH = "/data/blog-repo"
-SSH_KEY_PATH = "/home/user/.ssh/id_rsa"
-TARGET_BRANCH = "test"
+class Settings(BaseSettings):
+    """应用配置"""
 
-# 应用配置
-HOST = "0.0.0.0"
-PORT = 8000
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
-# 预定义的博客类别目录
-CATEGORY_FOLDERS = [
-    "30-day-sprint",
-    "dev-diaries",
-    "industry-insights",
-    "product-updates",
-    "research-notes",
-    "tutorials",
-]
+    # GitLab配置
+    gitlab_url: str = "https://gitlab.example.invalid/"
+    gitlab_project_id: str = "group/project"
+    gitlab_token: str = ""
+
+    # Git配置
+    repo_url: str = "git@example.invalid:group/project.git"
+    repo_local_path: str = "/tmp/blog-repo"
+    ssh_key_path: str = "/app/.ssh/id_rsa"
+    ssh_known_hosts_path: str | None = None  # 可选，为空时使用系统默认
+    target_branch: str = "test"
+
+    # 应用配置
+    host: str = "0.0.0.0"
+    port: int = 8000
+
+    # 预定义的博客类别目录
+    category_folders: list[str] = [
+        "30-day-sprint",
+        "dev-diaries",
+        "industry-insights",
+        "product-updates",
+        "research-notes",
+        "tutorials",
+    ]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """获取配置单例"""
+    return Settings()
