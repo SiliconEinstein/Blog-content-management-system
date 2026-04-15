@@ -1,6 +1,4 @@
-from .git_service import GitService
+from .git_service import GitService, GitServiceError
+from .gitlab_service import GitLabService, GitLabServiceError
 
-# GitLabService will be available after Task 4
-# from .gitlab_service import GitLabService
-
-__all__ = ["GitService"]
+__all__ = ["GitService", "GitServiceError", "GitLabService", "GitLabServiceError"]
