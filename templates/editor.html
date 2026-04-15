@@ -1,8 +1,118 @@
 {% extends "base.html" %}
 
-{% block title %}博客发布系统 - 编辑器{% endblock %}
+{% block title %}编辑博客 - 博客发布系统{% endblock %}
 
 {% block content %}
-<h1>博客发布系统</h1>
-<!-- Editor placeholder - will be implemented in Task 6 -->
+<form id="blog-form" method="post" action="/api/publish">
+    <!-- 基础信息 -->
+    <section class="form-section">
+        <h2>基础信息</h2>
+        <div class="form-row">
+            <label for="page_h1_title">页面标题 *</label>
+            <input type="text" id="page_h1_title" name="page_h1_title" required>
+        </div>
+        <div class="form-row">
+            <label for="meta_title">SEO标题 *</label>
+            <input type="text" id="meta_title" name="meta_title" required>
+        </div>
+        <div class="form-row">
+            <label for="url_slug">URL Slug *</label>
+            <input type="text" id="url_slug" name="url_slug" required
+                   pattern="[a-z0-9\-]+"
+                   title="只能包含小写字母、数字和连字符">
+        </div>
+    </section>
+
+    <!-- SEO信息 -->
+    <section class="form-section">
+        <h2>SEO信息</h2>
+        <div class="form-row">
+            <label for="meta_description">Meta描述 *</label>
+            <textarea id="meta_description" name="meta_description" rows="2" required></textarea>
+        </div>
+        <div class="form-row">
+            <label for="summary">摘要 *</label>
+            <textarea id="summary" name="summary" rows="2" required></textarea>
+        </div>
+        <div class="form-row">
+            <label for="image">封面图片URL *</label>
+            <input type="url" id="image" name="image" required>
+        </div>
+    </section>
+
+    <!-- 元数据 -->
+    <section class="form-section">
+        <h2>元数据</h2>
+        <div class="form-grid">
+            <div class="form-row">
+                <label for="post_date">日期 *</label>
+                <input type="date" id="post_date" name="post_date" value="{{ today }}" required>
+            </div>
+            <div class="form-row">
+                <label for="editor_name">编辑者 *</label>
+                <input type="text" id="editor_name" name="editor_name" required>
+            </div>
+            <div class="form-row">
+                <label for="category_folder">目录 *</label>
+                <select id="category_folder" name="category_folder" required>
+                    {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+                    <option value="__new__">+ 新建目录</option>
+                </select>
+                <input type="text" id="new_category" placeholder="输入新目录名" style="display:none;">
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-row">
+                <label for="content_type">内容类型 *</label>
+                <input type="text" id="content_type" name="content_type" required>
+            </div>
+            <div class="form-row">
+                <label for="content_category">内容分类 *</label>
+                <input type="text" id="content_category" name="content_category" required>
+            </div>
+            <div class="form-row">
+                <label for="tags">标签（逗号分隔）*</label>
+                <input type="text" id="tags" name="tags" required placeholder="tag1, tag2, tag3">
+            </div>
+        </div>
+    </section>
+
+    <!-- Markdown编辑 -->
+    <section class="form-section">
+        <h2>Markdown内容</h2>
+        <div class="editor-container">
+            <div class="editor-pane">
+                <h3>编辑</h3>
+                <textarea id="content" name="content"></textarea>
+            </div>
+            <div class="preview-pane">
+                <h3>预览</h3>
+                <div id="preview"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TOC -->
+    <section class="form-section">
+        <h2>目录 (TOC) <button type="button" id="refresh-toc" class="btn-small">刷新</button></h2>
+        <div id="toc-container">
+            <p class="hint">从Markdown内容中自动解析二级标题生成目录</p>
+            <div id="toc-list"></div>
+            <button type="button" id="add-toc" class="btn-small">+ 添加目录项</button>
+        </div>
+        <input type="hidden" id="toc_json" name="toc_json" value="[]">
+    </section>
+
+    <!-- 提交 -->
+    <section class="form-actions">
+        <button type="submit" class="btn-primary" id="submit-btn">提交博客</button>
+        <span id="submit-status"></span>
+    </section>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/editor.js"></script>
 {% endblock %}

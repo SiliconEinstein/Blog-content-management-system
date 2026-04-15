@@ -1,8 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}发布成功{% endblock %}
+{% block title %}发布成功 - 博客发布系统{% endblock %}
 
 {% block content %}
-<h1>发布成功</h1>
-<!-- Success page placeholder - will be implemented in Task 6 -->
+<div class="success-container">
+    <div class="success-icon">✓</div>
+    <h2>博客发布成功！</h2>
+
+    <div class="success-details">
+        <p><strong>分支名：</strong> {{ branch }}</p>
+
+        {% if mr_url %}
+        <p>
+            <strong>Merge Request：</strong>
+            <a href="{{ mr_url }}" target="_blank">{{ mr_url }}</a>
+        </p>
+        {% else %}
+        <p class="warning">
+            MR自动创建失败，请手动创建：
+            <a href="{{ manual_mr_url }}" target="_blank">点击这里创建MR</a>
+        </p>
+        {% endif %}
+    </div>
+
+    <div class="success-actions">
+        <a href="/" class="btn-primary">发布新博客</a>
+    </div>
+</div>
 {% endblock %}
