@@ -1,1 +1,307 @@
-/* Blog Publisher styles - placeholder for Task 7 */
+/* 基础样式 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f5f5;
+}
+
+header {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem 2rem;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* 表单样式 */
+.form-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.form-section h2 {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.form-row {
+    margin-bottom: 1rem;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-row input[type="text"],
+.form-row input[type="url"],
+.form-row input[type="date"],
+.form-row textarea,
+.form-row select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-row input:focus,
+.form-row textarea:focus,
+.form-row select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 编辑器样式 */
+.editor-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    min-height: 400px;
+}
+
+.editor-pane,
+.preview-pane {
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-pane h3,
+.preview-pane h3 {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.editor-pane .CodeMirror {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.preview-pane #preview {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1rem;
+    overflow-y: auto;
+    background: #fafafa;
+}
+
+/* 预览内容样式 */
+#preview h1, #preview h2, #preview h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#preview h1 { font-size: 1.5rem; }
+#preview h2 { font-size: 1.3rem; }
+#preview h3 { font-size: 1.1rem; }
+
+#preview p {
+    margin-bottom: 1rem;
+}
+
+#preview code {
+    background: #f0f0f0;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+#preview pre {
+    background: #f8f8f8;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+#preview pre code {
+    background: none;
+    padding: 0;
+}
+
+/* TOC样式 */
+#toc-container {
+    padding: 1rem;
+    background: #fafafa;
+    border-radius: 4px;
+}
+
+#toc-container .hint {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.toc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.toc-item input[type="checkbox"] {
+    width: auto;
+}
+
+.toc-item input[type="text"] {
+    flex: 1;
+    padding: 0.4rem;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.toc-item .toc-link {
+    width: 150px;
+    color: #666;
+}
+
+.toc-item button {
+    padding: 0.3rem 0.6rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* 按钮样式 */
+.btn-primary {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-primary:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.btn-small {
+    padding: 0.3rem 0.8rem;
+    background: #ecf0f1;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-small:hover {
+    background: #ddd;
+}
+
+.form-actions {
+    text-align: center;
+    padding: 1rem;
+}
+
+#submit-status {
+    margin-left: 1rem;
+    color: #666;
+}
+
+/* 成功页面样式 */
+.success-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    text-align: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    line-height: 80px;
+    font-size: 40px;
+    background: #27ae60;
+    color: white;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+}
+
+.success-container h2 {
+    color: #27ae60;
+    margin-bottom: 1.5rem;
+}
+
+.success-details {
+    text-align: left;
+    background: #f8f8f8;
+    padding: 1.5rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.success-details p {
+    margin-bottom: 0.5rem;
+    word-break: break-all;
+}
+
+.success-details a {
+    color: #3498db;
+}
+
+.success-details .warning {
+    color: #e67e22;
+}
+
+.success-actions {
+    margin-top: 1.5rem;
+}
