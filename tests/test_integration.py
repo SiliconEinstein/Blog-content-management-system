@@ -25,10 +25,10 @@ def mock_settings():
     mock.gitlab_url = "https://gitlab.example.com"
     mock.gitlab_project_id = "123"
     mock.gitlab_token = "test-token"
-    mock.repo_url = "git@gitlab.example.com:group/project.git"
+    mock.repo_url = "https://gitlab.example.com/group/project.git"
     mock.repo_local_path = "/tmp/test-repo"
-    mock.ssh_key_path = "/tmp/test-key"
-    mock.ssh_known_hosts_path = "/tmp/known_hosts"
+    mock.git_username = "oauth2"
+    mock.git_token = "test-token"
     mock.target_branch = "test"
     mock.category_folders = ["tutorials", "dev-diaries"]
     app.dependency_overrides[get_settings] = lambda: mock

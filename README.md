@@ -22,24 +22,31 @@ uv sync --extra dev
 
 ## 配置
 
-编辑 `config.py` 配置以下项目：
+复制 `.env.example` 为 `.env`，并配置以下项目：
 
-```python
-# GitLab配置
-GITLAB_URL = "https://gitlab.example.com"
-GITLAB_PROJECT_ID = "123"
-GITLAB_TOKEN = "glpat-xxxx"
+```bash
+# GitLab 配置
+GITLAB_URL=https://gitlab.example.com
+GITLAB_PROJECT_ID=group/project
+GITLAB_TOKEN=glpat-xxxx
 
-# Git配置
-REPO_URL = "git@gitlab.example.com:group/project.git"
-REPO_LOCAL_PATH = "/data/blog-repo"
-SSH_KEY_PATH = "/home/user/.ssh/id_rsa"
-TARGET_BRANCH = "test"
+# Git HTTPS 配置
+REPO_URL=https://gitlab.example.com/group/project.git
+REPO_LOCAL_PATH=/data/blog-repo
+GIT_USERNAME=oauth2
+GIT_TOKEN=glpat-xxxx
+TARGET_BRANCH=test
 
 # 应用配置
-HOST = "0.0.0.0"
-PORT = 8000
+HOST=0.0.0.0
+PORT=8000
 ```
+
+说明：
+
+- `GITLAB_TOKEN` 用于 GitLab API 创建 Merge Request
+- `GIT_TOKEN` 用于通过 HTTPS clone/fetch/push 仓库
+- 如 GitLab 配置允许，`GIT_USERNAME` 通常可使用 `oauth2`
 
 ## 运行
 

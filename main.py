@@ -83,9 +83,9 @@ def get_git_service() -> GitService:
     return GitService(
         repo_url=settings.repo_url,
         local_path=settings.repo_local_path,
-        ssh_key_path=settings.ssh_key_path,
+        username=settings.git_username,
+        token=settings.git_token,
         target_branch=settings.target_branch,
-        known_hosts_path=settings.ssh_known_hosts_path,
     )
 
 

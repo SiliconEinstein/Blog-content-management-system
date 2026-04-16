@@ -17,10 +17,10 @@ class Settings(BaseSettings):
     gitlab_token: str = ""
 
     # Git配置
-    repo_url: str = "git@example.invalid:group/project.git"
+    repo_url: str = "https://gitlab.example.invalid/group/project.git"
     repo_local_path: str = "/tmp/blog-repo"
-    ssh_key_path: str = "/app/.ssh/id_rsa"
-    ssh_known_hosts_path: str | None = None  # 可选，为空时使用系统默认
+    git_username: str = "oauth2"
+    git_token: str = ""
     target_branch: str = "test"
 
     # 应用配置

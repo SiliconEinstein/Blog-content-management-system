@@ -1,7 +1,7 @@
 """Git操作服务"""
-import os
 from pathlib import Path
 from datetime import datetime
+from urllib.parse import urlsplit, urlunsplit, quote
 from filelock import FileLock, Timeout
 from git import Repo, GitCommandError
 
@@ -18,26 +18,33 @@ class GitService:
         self,
         repo_url: str,
         local_path: str,
-        ssh_key_path: str,
+        username: str,
+        token: str,
         target_branch: str = "test",
-        known_hosts_path: str | None = None,
     ):
         self.repo_url = repo_url
         self.local_path = Path(local_path)
-        self.ssh_key_path = ssh_key_path
+        self.username = username
+        self.token = token
         self.target_branch = target_branch
         self._repo: Repo | None = None
 
-        # 构建SSH命令，使用指定的known_hosts文件进行主机密钥验证
-        if known_hosts_path:
-            self._git_ssh_cmd = (
-                f'ssh -i {ssh_key_path} '
-                f'-o UserKnownHostsFile={known_hosts_path} '
-                f'-o StrictHostKeyChecking=yes'
-            )
-        else:
-            # 回退：使用系统默认的known_hosts
-            self._git_ssh_cmd = f'ssh -i {ssh_key_path}'
+    def _authenticated_repo_url(self) -> str:
+        """生成带认证信息的 HTTPS 仓库地址"""
+        if not self.token:
+            raise GitServiceError("缺少 Git Token 配置")
+
+        parsed = urlsplit(self.repo_url)
+        if parsed.scheme not in {"http", "https"}:
+            raise GitServiceError("仅支持 HTTP(S) 仓库地址")
+
+        username = quote(self.username, safe="")
+        token = quote(self.token, safe="")
+        netloc = f"{username}:{token}@{parsed.hostname or ''}"
+        if parsed.port:
+            netloc = f"{netloc}:{parsed.port}"
+
+        return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
 
     @property
     def lock_file(self) -> Path:
@@ -69,22 +76,18 @@ class GitService:
                     "请手动检查或删除后重试"
                 )
             self.local_path.parent.mkdir(parents=True, exist_ok=True)
-            env = {"GIT_SSH_COMMAND": self._git_ssh_cmd}
             Repo.clone_from(
-                self.repo_url,
+                self._authenticated_repo_url(),
                 self.local_path,
-                env=env,
             )
             self._repo = None
 
     def sync_repo(self) -> None:
         """同步远程仓库到本地"""
-        env = {"GIT_SSH_COMMAND": self._git_ssh_cmd}
-
-        with self.repo.git.custom_environment(**env):
-            self.repo.git.fetch("origin")
-            self.repo.git.checkout(self.target_branch)
-            self.repo.git.reset("--hard", f"origin/{self.target_branch}")
+        self.repo.git.remote("set-url", "origin", self._authenticated_repo_url())
+        self.repo.git.fetch("origin")
+        self.repo.git.checkout(self.target_branch)
+        self.repo.git.reset("--hard", f"origin/{self.target_branch}")
 
     def create_branch(self, branch_name: str) -> None:
         """创建并切换到新分支"""
@@ -103,13 +106,10 @@ class GitService:
 
     def commit_and_push(self, file_path: str, message: str, branch_name: str) -> None:
         """提交并推送到远程"""
-        env = {"GIT_SSH_COMMAND": self._git_ssh_cmd}
-
+        self.repo.git.remote("set-url", "origin", self._authenticated_repo_url())
         self.repo.git.add(file_path)
         self.repo.git.commit("-m", message)
-
-        with self.repo.git.custom_environment(**env):
-            self.repo.git.push("origin", branch_name)
+        self.repo.git.push("origin", branch_name)
 
     def acquire_lock(self, timeout: int = 60) -> FileLock:
         """获取仓库操作锁"""
