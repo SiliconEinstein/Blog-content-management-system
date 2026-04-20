@@ -82,7 +82,7 @@ class BlogPost(BaseModel):
             "meta_description": self.meta_description,
             "summary": self.summary,
             "image": self.image,
-            "date": self.date.isoformat(),
+            "date": self.date,  # 保持 date 对象，YAML 会输出为无引号格式
             "editor_name": self.editor_name,
             "content_type": self.content_type,
             "content_category": self.content_category,
@@ -90,11 +90,11 @@ class BlogPost(BaseModel):
             "custom_toc": [item.model_dump() for item in self.custom_toc],
         }
 
-        # 对除了 tags 之外的字符串字段应用引号
+        # 对除了 tags 和 date 之外的字符串字段应用引号
         quoted_frontmatter = {}
         for k, v in frontmatter.items():
-            if k == "tags":
-                quoted_frontmatter[k] = v  # 已处理
+            if k in ("tags", "date"):
+                quoted_frontmatter[k] = v  # 保持原样
             else:
                 quoted_frontmatter[k] = _quote_strings(v)
 

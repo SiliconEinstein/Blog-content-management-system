@@ -21,12 +21,16 @@ class GitService:
         username: str,
         token: str,
         target_branch: str = "test",
+        commit_name: str = "Blog Publisher",
+        commit_email: str = "blog-publisher@example.com",
     ):
         self.repo_url = repo_url
         self.local_path = Path(local_path)
         self.username = username
         self.token = token
         self.target_branch = target_branch
+        self.commit_name = commit_name
+        self.commit_email = commit_email
         self._repo: Repo | None = None
 
     def _authenticated_repo_url(self) -> str:
@@ -107,6 +111,9 @@ class GitService:
     def commit_and_push(self, file_path: str, message: str, branch_name: str) -> None:
         """提交并推送到远程"""
         self.repo.git.remote("set-url", "origin", self._authenticated_repo_url())
+        # 设置提交者身份
+        self.repo.config_writer().set_value("user", "name", self.commit_name).release()
+        self.repo.config_writer().set_value("user", "email", self.commit_email).release()
         self.repo.git.add(file_path)
         self.repo.git.commit("-m", message)
         self.repo.git.push("origin", branch_name)

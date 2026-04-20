@@ -86,6 +86,8 @@ def get_git_service() -> GitService:
         username=settings.git_username,
         token=settings.git_token,
         target_branch=settings.target_branch,
+        commit_name=settings.git_commit_name,
+        commit_email=settings.git_commit_email,
     )
 
 

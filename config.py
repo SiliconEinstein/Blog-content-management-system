@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     repo_local_path: str = "/tmp/blog-repo"
     git_username: str = "oauth2"
     git_token: str = ""
+    git_commit_name: str = "Blog Publisher"
+    git_commit_email: str = "blog-publisher@example.com"
     target_branch: str = "test"
 
     # 应用配置
