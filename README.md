@@ -35,6 +35,8 @@ REPO_URL=https://gitlab.example.com/group/project.git
 REPO_LOCAL_PATH=/data/blog-repo
 GIT_USERNAME=oauth2
 GIT_TOKEN=glpat-xxxx
+GIT_COMMIT_NAME=Blog Publisher
+GIT_COMMIT_EMAIL=blog-publisher@example.com
 TARGET_BRANCH=test
 
 # 应用配置
@@ -47,6 +49,7 @@ PORT=8000
 - `GITLAB_TOKEN` 用于 GitLab API 创建 Merge Request
 - `GIT_TOKEN` 用于通过 HTTPS clone/fetch/push 仓库
 - 如 GitLab 配置允许，`GIT_USERNAME` 通常可使用 `oauth2`
+- `GIT_COMMIT_NAME` 和 `GIT_COMMIT_EMAIL` 用于设置提交者身份（显示在 commit 记录中）
 
 ## 运行
 
